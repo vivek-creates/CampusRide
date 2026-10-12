@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #080808;
+    --bg-secondary: #141414;
+    --card-surface: #191919;
+    --card-surface-elevated: #202020;
+    --primary-orange: #FF6A00;
+    --bright-orange: #FF790F;
+    --amber-highlight: #FF9D2E;
+    --text-primary: #FFFFFF;
+    --text-secondary: #A6A6A6;
+    --text-muted: #737373;
+    --border-color: #2A2A2A;
+    --border-subtle: #222222;
+    --color-success: #35D07F;
+    --color-warning: #FFB020;
+    --color-error: #FF4D4D;
+    --nav-bg: rgba(18, 18, 18, 0.95);
+    --input-bg: #141414;
+    --tag-bg: #1A1A1A;
+    --hover-bg: #222222;
+    --divider-color: #262626;
+  }
+
+  html.light, .light {
+    --bg-main: #F4F5F7;
+    --bg-secondary: #FFFFFF;
+    --card-surface: #FFFFFF;
+    --card-surface-elevated: #F9FAFB;
+    --primary-orange: #FF6A00;
+    --bright-orange: #FF790F;
+    --amber-highlight: #FF9D2E;
+    --text-primary: #111827;
+    --text-secondary: #4B5563;
+    --text-muted: #6B7280;
+    --border-color: #E5E7EB;
+    --border-subtle: #F3F4F6;
+    --color-success: #15803D;
+    --color-warning: #D97706;
+    --color-error: #DC2626;
+    --nav-bg: rgba(255, 255, 255, 0.96);
+    --input-bg: #F3F4F6;
+    --tag-bg: #F3F4F6;
+    --hover-bg: #F3F4F6;
+    --divider-color: #E5E7EB;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+    min-height: 100dvh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+/* Reusable Theme Tokens for Global Dark/Light Switching */
+.app-bg {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.app-card {
+  background-color: var(--card-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.app-card-elevated {
+  background-color: var(--card-surface-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.app-secondary {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.app-input {
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.app-tag {
+  background-color: var(--tag-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.app-tag:hover {
+  border-color: var(--primary-orange);
+  color: var(--text-primary);
+}
+
+.app-nav {
+  background-color: var(--nav-bg);
+  border-top: 1px solid var(--border-color);
+}
+
+.app-border {
+  border-color: var(--border-color);
+}
+
+.app-divider {
+  border-color: var(--divider-color);
+}
+
+.app-text-primary {
+  color: var(--text-primary);
+}
+
+.app-text-secondary {
+  color: var(--text-secondary);
+}
+
+.app-text-muted {
+  color: var(--text-muted);
+}
+
+/* Custom Breathing Glow Animation for Login Artwork */
+@keyframes breathingGlow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 25px rgba(255, 106, 0, 0.25), 0 0 50px rgba(255, 106, 0, 0.12);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 45px rgba(255, 106, 0, 0.55), 0 0 80px rgba(255, 106, 0, 0.25);
+  }
+}
+
+.animate-breathing-glow {
+  animation: breathingGlow 2.8s ease-in-out infinite;
+}
+
+/* Subtle pulse glow */
+@keyframes subtlePulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-subtle-pulse {
+  animation: subtlePulse 2.5s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff6a00;
+}
+
+/* Mobile safe area utilities */
+.safe-pb {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+.safe-pt {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
