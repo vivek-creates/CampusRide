@@ -123,8 +123,12 @@ export const StopPickerModal: React.FC<StopPickerModalProps> = ({
   }, [isOpen]);
 
   const allStops = useMemo(() => {
-    return getAllUniqueStops();
-  }, []);
+    const rawStops = getAllUniqueStops();
+    if (!isOrigin) {
+      return rawStops.filter(stop => !isCollegeStop(stop));
+    }
+    return rawStops;
+  }, [isOrigin]);
 
   const filteredStops = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -138,6 +142,7 @@ export const StopPickerModal: React.FC<StopPickerModalProps> = ({
   }, [allStops, searchQuery, formatStop]);
 
   const showOrientalCollegeOption = useMemo(() => {
+    if (!isOrigin) return false;
     if (!searchQuery.trim()) return true;
     const norm = normalizeString(searchQuery);
     return (
@@ -145,7 +150,7 @@ export const StopPickerModal: React.FC<StopPickerModalProps> = ({
       'college'.includes(norm) ||
       t('orientalCollege').toLowerCase().includes(norm)
     );
-  }, [searchQuery, t]);
+  }, [isOrigin, searchQuery, t]);
 
   const isCurrentCollege = isCollegeStop(currentValue);
 

@@ -13,6 +13,25 @@ export interface RouteData {
   isOperatingToday: boolean;
   busesScheduledCount?: number; // Total buses for this route
   yesterdayBusNumber?: string; // If changed from yesterday
+  lastPublishedAt?: number; // Timestamp of verified publication
+}
+
+export interface PublishedScheduleUpdate {
+  busNumber: string;
+  routeNumber?: string;
+  routeId?: string;
+  departureTime?: string;
+  publishedAt: number;
+  status: 'published';
+}
+
+export interface DraftScheduleUpdate {
+  busNumber: string;
+  routeNumber?: string;
+  routeId?: string;
+  departureTime?: string;
+  draftedAt: number;
+  status: 'draft';
 }
 
 export interface SearchResult {

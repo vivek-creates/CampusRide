@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SearchResult } from '../types';
 import { StorageService } from '../services/storageService';
-import { Check, X, CheckCircle, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { Check, X, CheckCircle, ChevronDown, ChevronUp, MapPin, CheckCircle2, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 interface BusCardProps {
@@ -13,6 +13,9 @@ interface BusCardProps {
 export const BusCard: React.FC<BusCardProps> = ({ searchResult, onVerified }) => {
   const { t, formatStop } = useApp();
   const { route, source, destination, stops, matchedStopIndex } = searchResult;
+
+  // Retrieve today's publication/update status in Asia/Kolkata
+  const scheduleStatus = StorageService.getBusScheduleStatus(route);
 
   // Check if user already verified this bus in storage
   const [hasAnswered, setHasAnswered] = useState<boolean>(() => {
@@ -33,37 +36,6 @@ export const BusCard: React.FC<BusCardProps> = ({ searchResult, onVerified }) =>
     if (onVerified) onVerified();
   };
 
-  const getStatusBadge = () => {
-    switch (route.boardingStatus) {
-      case 'Boarding':
-        return (
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#35D07F]/15 border border-[#35D07F]/30 text-[#35D07F] tracking-wide flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#35D07F] animate-pulse" />
-            {t('statusBoarding')}
-          </span>
-        );
-      case 'Preparing':
-        return (
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#FFB020]/15 border border-[#FFB020]/30 text-[#FFB020] tracking-wide flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FFB020]" />
-            {t('statusPreparing')}
-          </span>
-        );
-      case 'Departed':
-        return (
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-gray-500/20 border border-gray-400/30 app-text-muted tracking-wide">
-            {t('statusDeparted')}
-          </span>
-        );
-      case 'Cancelled':
-        return (
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#FF4D4D]/15 border border-[#FF4D4D]/30 text-[#FF4D4D] tracking-wide">
-            {t('statusCancelled')}
-          </span>
-        );
-    }
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -75,7 +47,7 @@ export const BusCard: React.FC<BusCardProps> = ({ searchResult, onVerified }) =>
       {/* Subtle top orange sheen */}
       <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#FF6A00]/60 to-transparent" />
 
-      {/* Top Header: "YOUR BUS" and Boarding Badge */}
+      {/* Top Header: "YOUR BUS" and Route Number */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold app-text-muted uppercase tracking-wider">
@@ -85,7 +57,6 @@ export const BusCard: React.FC<BusCardProps> = ({ searchResult, onVerified }) =>
             {route.routeNumber}
           </span>
         </div>
-        {getStatusBadge()}
       </div>
 
       {/* Bus Number (e.g. Bus MP 0504) */}
@@ -163,7 +134,7 @@ export const BusCard: React.FC<BusCardProps> = ({ searchResult, onVerified }) =>
       {/* Divider Line */}
       <div className="app-divider border-t my-4" />
 
-      {/* ASSIGNED STAND & DEPARTURE Grid */}
+      {/* ASSIGNED STAND & STATUS / DEPARTURE Grid */}
       <div className="grid grid-cols-2 gap-4 pb-1">
         <div>
           <span className="block text-[11px] font-semibold app-text-muted uppercase tracking-wider mb-1">
@@ -173,12 +144,20 @@ export const BusCard: React.FC<BusCardProps> = ({ searchResult, onVerified }) =>
             {route.assignedStand}
           </span>
         </div>
-        <div className="text-right">
-          <span className="block text-[11px] font-semibold app-text-muted uppercase tracking-wider mb-1">
-            {t('departure')}
-          </span>
+        <div className="text-right flex flex-col items-end">
+          {scheduleStatus.isUpdatedToday ? (
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#35D07F] mb-1">
+              <CheckCircle2 size={13} className="text-[#35D07F]" />
+              <span>{t('statusUpdated')}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#FFB020] mb-1">
+              <Clock size={13} className="text-[#FFB020]" />
+              <span>{t('statusNoUpdate')}</span>
+            </div>
+          )}
           <span className="text-xl font-extrabold app-text-primary tracking-tight">
-            {route.departureTime}
+            {scheduleStatus.departureTime}
           </span>
         </div>
       </div>

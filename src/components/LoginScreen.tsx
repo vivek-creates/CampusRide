@@ -94,10 +94,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           </div>
         </motion.div>
 
-        {/* Wordmark: Campus in White/Primary, Ride in Orange */}
+        {/* Wordmark: or in White/Primary, Bus in Orange */}
         <div className="flex items-center tracking-tight mb-2">
-          <span className="text-3xl font-extrabold app-text-primary">Campus</span>
-          <span className="text-3xl font-extrabold text-[#FF6A00] ml-0.5">Ride</span>
+          <span className="text-3xl font-extrabold app-text-primary">or</span>
+          <span className="text-3xl font-extrabold text-[#FF6A00] ml-0.5">Bus</span>
         </div>
 
         {/* Taglines */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, RefreshCw, User } from 'lucide-react';
+import { Home, Activity, User } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export type TabType = 'home' | 'updates' | 'profile';
@@ -15,7 +15,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab }) 
 
   const tabs = [
     { id: 'home' as TabType, label: t('navHome'), icon: Home },
-    { id: 'updates' as TabType, label: t('navUpdates'), icon: RefreshCw },
+    { id: 'updates' as TabType, label: t('navUpdates'), icon: Activity },
     { id: 'profile' as TabType, label: t('navProfile'), icon: User },
   ];
 

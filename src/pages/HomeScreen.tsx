@@ -5,7 +5,6 @@ import {
   MapPin,
   ChevronDown,
   Bus,
-  ArrowUpDown,
   Clock,
   Loader2,
   AlertCircle
@@ -26,8 +25,11 @@ interface HomeScreenProps {
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ session }) => {
   const { t, formatStop } = useApp();
-  const [source, setSource] = useState(COLLEGE_DISPLAY_EN);
-  const [destination, setDestination] = useState('Bairagarh Bus Stand');
+  const source = COLLEGE_DISPLAY_EN;
+  const [destination, setDestination] = useState<string>(() => {
+    const recents = StorageService.getRecentSearches();
+    return recents[0] || 'Bairagarh Bus Stand';
+  });
   const [recentDestinations, setRecentDestinations] = useState<string[]>(() => {
     return StorageService.getRecentSearches();
   });
@@ -37,40 +39,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ session }) => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
   // Modals state
-  const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
   const [isDestModalOpen, setIsDestModalOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
-  const performSearch = (src: string = source, dst: string = destination) => {
-    if (!dst.trim()) return;
+  const performSearch = (dest: string = destination) => {
+    if (!dest.trim()) return;
 
     setIsSearching(true);
     setHasSearched(true);
 
-    // Save destination to recents
-    StorageService.addRecentSearch(dst);
+    // Save destination stop to recents
+    StorageService.addRecentSearch(dest);
     setRecentDestinations(StorageService.getRecentSearches());
 
     // Brief realistic loading animation (400ms)
     setTimeout(() => {
-      const results = findBusesForJourney(src, dst);
+      const results = findBusesForJourney(source, dest);
       setSearchResults(results);
       setIsSearching(false);
     }, 400);
   };
 
-  const handleSwapStops = () => {
-    const temp = source;
-    setSource(destination);
-    setDestination(temp);
-    if (hasSearched) {
-      performSearch(destination, temp);
-    }
-  };
-
   const handleSelectRecent = (recent: string) => {
     setDestination(recent);
-    performSearch(source, recent);
+    performSearch(recent);
   };
 
   // Determine greeting based on current local hour
@@ -96,7 +88,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ session }) => {
           </div>
           <div>
             <span className="text-lg font-extrabold tracking-tight app-text-primary block leading-tight">
-              Campus<span className="text-[#FF6A00]">Ride</span>
+              or<span className="text-[#FF6A00]">Bus</span>
             </span>
             <span className="text-[10px] app-text-muted font-medium block">
               {t('orientalCollege')}, Bhopal
@@ -130,11 +122,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ session }) => {
 
       {/* SEARCH CARD CONTAINER */}
       <div className="app-card rounded-2xl p-4 shadow-xl">
-        {/* FROM Picker Row */}
-        <div
-          onClick={() => setIsSourceModalOpen(true)}
-          className="flex items-center justify-between py-2 cursor-pointer group"
-        >
+        {/* FROM Section (Fixed to Oriental College) */}
+        <div className="flex items-center justify-between py-2">
           <div className="flex items-center gap-3">
             <div className="text-[#FF6A00]">
               <MapPin size={18} />
@@ -143,33 +132,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ session }) => {
               <span className="block text-[10px] font-bold app-text-muted tracking-wider uppercase">
                 {t('labelFrom')}
               </span>
-              <span className="text-sm font-semibold app-text-primary group-hover:text-[#FF9D2E] transition-colors truncate block max-w-[240px]">
-                {formatStop(source)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold app-text-primary truncate block max-w-[240px]">
+                  {formatStop(source)}
+                </span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FF6A00]/15 text-[#FF6A00] tracking-wide">
+                  Central Campus
+                </span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <ChevronDown size={17} className="app-text-muted group-hover:app-text-primary" />
-          </div>
         </div>
 
-        {/* Divider with Swap Direction Button */}
-        <div className="relative my-2">
-          <div className="app-divider border-t" />
-          <button
-            type="button"
-            onClick={e => {
-              e.stopPropagation();
-              handleSwapStops();
-            }}
-            title={t('swapDirection')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full app-tag flex items-center justify-center transition-all cursor-pointer hover:border-[#FF790F] hover:text-[#FF790F]"
-          >
-            <ArrowUpDown size={12} />
-          </button>
-        </div>
+        {/* Divider between FROM and TO */}
+        <div className="app-divider border-t my-2" />
 
-        {/* TO Picker Row */}
+        {/* TO Picker Row (Searchable list of available stops) */}
         <div
           onClick={() => setIsDestModalOpen(true)}
           className="flex items-center justify-between py-2 cursor-pointer group"
@@ -187,7 +165,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ session }) => {
               </span>
             </div>
           </div>
-          <ChevronDown size={17} className="app-text-muted group-hover:app-text-primary" />
+          <div className="flex items-center gap-2">
+            <ChevronDown size={17} className="app-text-muted group-hover:app-text-primary" />
+          </div>
         </div>
 
         {/* SEARCH BUS Button */}
@@ -300,23 +280,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ session }) => {
         </div>
       )}
 
-      {/* SOURCE MODAL */}
-      <StopPickerModal
-        isOpen={isSourceModalOpen}
-        onClose={() => setIsSourceModalOpen(false)}
-        onSelect={val => setSource(val)}
-        title={t('selectOriginTitle')}
-        currentValue={source}
-        isOrigin={true}
-      />
-
       {/* DESTINATION MODAL */}
       <StopPickerModal
         isOpen={isDestModalOpen}
         onClose={() => setIsDestModalOpen(false)}
-        onSelect={val => setDestination(val)}
+        onSelect={val => {
+          setDestination(val);
+          performSearch(val);
+        }}
         title={t('selectDestTitle')}
         currentValue={destination}
+        isOrigin={false}
       />
 
       {/* NOTIFICATION MODAL */}

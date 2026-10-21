@@ -114,15 +114,15 @@ export const CinematicSplash: React.FC<CinematicSplashProps> = ({
           <EmblemLogo size="lg" glow={true} />
         </motion.div>
 
-        {/* 4: Wordmark Reveal ("Campus" in white, "Ride" in orange) */}
+        {/* 4: Wordmark Reveal ("or" in white, "Bus" in orange) */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.7, ease: 'easeOut' }}
           className="flex items-center tracking-tight"
         >
-          <span className="text-4xl font-extrabold text-white tracking-tight">Campus</span>
-          <span className="text-4xl font-extrabold text-[#FF6A00] ml-0.5 tracking-tight">Ride</span>
+          <span className="text-4xl font-extrabold text-white tracking-tight">or</span>
+          <span className="text-4xl font-extrabold text-[#FF6A00] ml-0.5 tracking-tight">Bus</span>
         </motion.div>
 
         {/* 5: Tagline Reveal */}

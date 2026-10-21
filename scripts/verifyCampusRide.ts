@@ -305,6 +305,111 @@ assert(
   `Buses: ${reverseBharatJourney.map(r => r.route.busNumber).join(', ')}`
 );
 
+// -------------------------------------------------------------
+// SECTION 7: ORBUS BRANDING, ACTIVITY TAB & PROFILE UPDATES
+// -------------------------------------------------------------
+console.log('\n--- SECTION 7: orBus Branding, Activity Nav & Clean Confirmation Icons ---');
+
+// 27. App Branding Name
+assert(TRANSLATIONS.en.appName === 'orBus' && TRANSLATIONS.hi.appName === 'orBus', 'App Branding: orBus', `EN: ${TRANSLATIONS.en.appName}, HI: ${TRANSLATIONS.hi.appName}`);
+
+// 28. Navigation Updates -> Activity
+assert(TRANSLATIONS.en.navUpdates === 'Activity' && TRANSLATIONS.hi.navUpdates === 'एक्टिविटी', 'Navigation Updates renamed to Activity', `EN: ${TRANSLATIONS.en.navUpdates}, HI: ${TRANSLATIONS.hi.navUpdates}`);
+
+// 29. Clean Yes/No Buttons (no duplicate text icon glyphs)
+assert(TRANSLATIONS.en.btnYes === 'YES' && TRANSLATIONS.en.btnNo === 'NO', 'Clean English Yes/No Button Labels (Single Icon)', `YES="${TRANSLATIONS.en.btnYes}", NO="${TRANSLATIONS.en.btnNo}"`);
+assert(TRANSLATIONS.hi.btnYes === 'हाँ' && TRANSLATIONS.hi.btnNo === 'नहीं', 'Clean Hindi Yes/No Button Labels', `YES="${TRANSLATIONS.hi.btnYes}", NO="${TRANSLATIONS.hi.btnNo}"`);
+
+// 30. Report Bugs Translations
+assert(Boolean(TRANSLATIONS.en.reportBugs && TRANSLATIONS.hi.reportBugs), 'Report Bugs Translations Available', `EN: ${TRANSLATIONS.en.reportBugs}, HI: ${TRANSLATIONS.hi.reportBugs}`);
+
+// -------------------------------------------------------------
+// SECTION 8: FROM ORIENTAL COLLEGE & TO DESTINATION FILTERING
+// -------------------------------------------------------------
+console.log('\n--- SECTION 8: FROM Oriental College & TO Destination Filtering ---');
+
+// 31. Destination options must exclude Oriental College
+const destinationStops = allUniqueStops.filter(stop => !isCollegeStop(stop));
+const hasCollegeInDestinations = destinationStops.some(s => isCollegeStop(s));
+assert(!hasCollegeInDestinations, 'Destination Filter: Oriental College excluded from TO options');
+
+// 32. Popular Bhopal destinations exist in TO options
+const hasBharatNagarInDest = destinationStops.some(s => normalizeString(s).includes('bharat nagar'));
+const hasMinalInDest = destinationStops.some(s => normalizeString(s).includes('minal'));
+const hasNizamuddinInDest = destinationStops.some(s => normalizeString(s).includes('nizamuddin'));
+assert(hasBharatNagarInDest && hasMinalInDest && hasNizamuddinInDest, 'TO Options contain Bharat Nagar, Minal Residency & Nizamuddin Tea Point');
+
+// 33. Routes from Oriental College to destinations are correctly resolved
+const collegeToMinal = findBusesForJourney('Oriental College', 'Minal Residency');
+assert(collegeToMinal.length > 0 && collegeToMinal[0].direction === 'to_home', 'Route Matching: Oriental College -> Minal Residency', `Found ${collegeToMinal.length} buses`);
+
+// 34. Activity Landing Page Cards & Back Controls
+assert(
+  Boolean(TRANSLATIONS.en.exploreRoutesDesc && TRANSLATIONS.en.feedbackCardDesc && TRANSLATIONS.en.backToActivity),
+  'Activity Landing Page & Back navigation translation keys present',
+  `EN: "${TRANSLATIONS.en.exploreRoutesDesc}", Back: "${TRANSLATIONS.en.backToActivity}"`
+);
+
+// -------------------------------------------------------------
+// SECTION 9: TODAY'S UPDATE STATUS & LOGIN ARROW FIX
+// -------------------------------------------------------------
+console.log("\n--- SECTION 9: Today's Update Status & Login Arrow Fix ---");
+
+// 35. Single Arrow in Continue Button (no duplicate unicode arrow in text)
+assert(TRANSLATIONS.en.continueBtn === 'Continue', 'Login Continue Button Text (EN): Single arrow in UI, clean string', `EN="${TRANSLATIONS.en.continueBtn}"`);
+assert(TRANSLATIONS.hi.continueBtn === 'आगे बढ़ें', 'Login Continue Button Text (HI): Clean string', `HI="${TRANSLATIONS.hi.continueBtn}"`);
+
+// 36. Status translations
+assert(TRANSLATIONS.en.statusUpdated === 'Updated' && TRANSLATIONS.en.statusNoUpdate === 'No update', 'Status Translations (EN): Updated and No update', `Updated="${TRANSLATIONS.en.statusUpdated}", No update="${TRANSLATIONS.en.statusNoUpdate}"`);
+assert(TRANSLATIONS.hi.statusUpdated === 'अपडेटेड' && TRANSLATIONS.hi.statusNoUpdate === 'कोई अपडेट नहीं', 'Status Translations (HI): Updated and No update', `Updated="${TRANSLATIONS.hi.statusUpdated}", No update="${TRANSLATIONS.hi.statusNoUpdate}"`);
+
+// 37. Asia/Kolkata timezone determination
+import { isTodayInKolkata } from '../src/utils/collegeHelper';
+const nowKolkata = Date.now();
+const yesterdayKolkata = Date.now() - 24 * 60 * 60 * 1000 * 2;
+assert(isTodayInKolkata(nowKolkata) === true, 'Timezone: Today in Asia/Kolkata returns true for current time');
+assert(isTodayInKolkata(yesterdayKolkata) === false, 'Timezone: Yesterday/past timestamp in Asia/Kolkata returns false');
+
+// 38. Test a bus with relevant schedule published today: green Updated
+const route04 = INITIAL_ROUTES.find(r => r.routeNumber === 'Route 04')!;
+const route04Status = StorageService.getBusScheduleStatus(route04);
+assert(route04Status.isUpdatedToday === true, 'Bus with schedule published today: Updated', `Route 04 (MP 0504) isUpdatedToday=${route04Status.isUpdatedToday}`);
+
+// 39. Test a bus with no relevant update today: amber No update
+const route01 = INITIAL_ROUTES.find(r => r.routeNumber === 'Route 01')!;
+const route01Status = StorageService.getBusScheduleStatus(route01);
+assert(route01Status.isUpdatedToday === false, 'Bus with no update today: No update', `Route 01 (MP 0501) isUpdatedToday=${route01Status.isUpdatedToday}`);
+
+// 40. Confirm unpublished drafts do NOT count as updates
+StorageService.saveDraftScheduleUpdate({
+  busNumber: 'MP 0501',
+  routeNumber: 'Route 01',
+  departureTime: '5:15 PM'
+});
+const route01AfterDraft = StorageService.getBusScheduleStatus(route01);
+assert(route01AfterDraft.isUpdatedToday === false, 'Unpublished drafts do NOT count as updates', `Route 01 with draft: isUpdatedToday=${route01AfterDraft.isUpdatedToday}`);
+
+// 41. Confirm an unrelated bus update does NOT change every bus's status
+StorageService.publishScheduleUpdate({
+  busNumber: 'MP 0514',
+  routeNumber: 'Route 14',
+  departureTime: '4:45 PM'
+});
+const route14Status = StorageService.getBusScheduleStatus(INITIAL_ROUTES.find(r => r.routeNumber === 'Route 14')!);
+const route02Status = StorageService.getBusScheduleStatus(INITIAL_ROUTES.find(r => r.routeNumber === 'Route 02')!);
+assert(route14Status.isUpdatedToday === true, 'Target bus Route 14 marked Updated after publish');
+assert(route02Status.isUpdatedToday === false, 'Unrelated bus Route 02 remains No update (not affected by Route 14)');
+
+// 42. Confirm yesterday's publication is NOT shown as today's update
+StorageService.publishScheduleUpdate({
+  busNumber: 'MP 0503',
+  routeNumber: 'Route 03',
+  departureTime: '4:45 PM',
+  publishedAt: Date.now() - 86400000 * 2
+});
+const route03Status = StorageService.getBusScheduleStatus(INITIAL_ROUTES.find(r => r.routeNumber === 'Route 03')!);
+assert(route03Status.isUpdatedToday === false, "Yesterday's publication is NOT shown as today's update", `Route 03 published 2 days ago: isUpdatedToday=${route03Status.isUpdatedToday}`);
+
 console.log('\n==============================================');
 console.log(`TOTAL TESTS: ${passCount + failCount}`);
 console.log(`SUMMARY: ${passCount} PASSED, ${failCount} FAILED`);

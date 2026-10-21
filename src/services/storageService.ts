@@ -3,9 +3,12 @@ import {
   UserPreferences,
   VerificationRecord,
   FeedbackRecord,
-  StudentScoreData
+  StudentScoreData,
+  PublishedScheduleUpdate,
+  DraftScheduleUpdate,
+  RouteData
 } from '../types';
-import { isCollegeStop } from '../utils/collegeHelper';
+import { isCollegeStop, isTodayInKolkata } from '../utils/collegeHelper';
 
 const STORAGE_KEYS = {
   SESSION: 'campusride_user_session',
@@ -14,7 +17,9 @@ const STORAGE_KEYS = {
   RECENTS: 'campusride_recent_searches',
   VERIFICATIONS: 'campusride_verifications',
   FEEDBACKS: 'campusride_feedbacks',
-  PREFERENCES: 'campusride_preferences'
+  PREFERENCES: 'campusride_preferences',
+  PUBLISHED_SCHEDULES: 'campusride_published_schedules',
+  DRAFT_SCHEDULES: 'campusride_draft_schedules'
 };
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -329,5 +334,133 @@ export class StorageService {
     const updated = [newRecord, ...all];
     this.safeSet(STORAGE_KEYS.FEEDBACKS, updated);
     return newRecord;
+  }
+
+  /**
+   * Published Schedule Updates (Admin & Shared State)
+   */
+  static getPublishedSchedules(): Record<string, PublishedScheduleUpdate> {
+    return this.safeGet<Record<string, PublishedScheduleUpdate>>(STORAGE_KEYS.PUBLISHED_SCHEDULES, {});
+  }
+
+  static getPublishedScheduleUpdate(busNumber?: string, routeNumber?: string, routeId?: string): PublishedScheduleUpdate | null {
+    const published = this.getPublishedSchedules();
+    if (busNumber && published[busNumber] && published[busNumber].status === 'published') {
+      return published[busNumber];
+    }
+    if (routeNumber && published[routeNumber] && published[routeNumber].status === 'published') {
+      return published[routeNumber];
+    }
+    if (routeId && published[routeId] && published[routeId].status === 'published') {
+      return published[routeId];
+    }
+    return null;
+  }
+
+  static publishScheduleUpdate(update: {
+    busNumber: string;
+    routeNumber?: string;
+    routeId?: string;
+    departureTime?: string;
+    publishedAt?: number;
+  }): PublishedScheduleUpdate {
+    const published = this.getPublishedSchedules();
+    const record: PublishedScheduleUpdate = {
+      busNumber: update.busNumber,
+      routeNumber: update.routeNumber,
+      routeId: update.routeId,
+      departureTime: update.departureTime,
+      publishedAt: update.publishedAt !== undefined ? update.publishedAt : Date.now(),
+      status: 'published'
+    };
+    if (record.busNumber) published[record.busNumber] = record;
+    if (record.routeNumber) published[record.routeNumber] = record;
+    if (record.routeId) published[record.routeId] = record;
+    this.safeSet(STORAGE_KEYS.PUBLISHED_SCHEDULES, published);
+
+    // Remove any draft for this bus/route
+    this.removeDraftScheduleUpdate(record.busNumber, record.routeNumber);
+    return record;
+  }
+
+  /**
+   * Draft Schedule Updates (Must NOT count as published)
+   */
+  static getDraftSchedules(): Record<string, DraftScheduleUpdate> {
+    return this.safeGet<Record<string, DraftScheduleUpdate>>(STORAGE_KEYS.DRAFT_SCHEDULES, {});
+  }
+
+  static saveDraftScheduleUpdate(draft: {
+    busNumber: string;
+    routeNumber?: string;
+    routeId?: string;
+    departureTime?: string;
+    draftedAt?: number;
+  }): DraftScheduleUpdate {
+    const drafts = this.getDraftSchedules();
+    const record: DraftScheduleUpdate = {
+      busNumber: draft.busNumber,
+      routeNumber: draft.routeNumber,
+      routeId: draft.routeId,
+      departureTime: draft.departureTime,
+      draftedAt: draft.draftedAt || Date.now(),
+      status: 'draft'
+    };
+    if (record.busNumber) drafts[record.busNumber] = record;
+    if (record.routeNumber) drafts[record.routeNumber] = record;
+    this.safeSet(STORAGE_KEYS.DRAFT_SCHEDULES, drafts);
+    return record;
+  }
+
+  static removeDraftScheduleUpdate(busNumber?: string, routeNumber?: string): void {
+    const drafts = this.getDraftSchedules();
+    let changed = false;
+    if (busNumber && drafts[busNumber]) {
+      delete drafts[busNumber];
+      changed = true;
+    }
+    if (routeNumber && drafts[routeNumber]) {
+      delete drafts[routeNumber];
+      changed = true;
+    }
+    if (changed) {
+      this.safeSet(STORAGE_KEYS.DRAFT_SCHEDULES, drafts);
+    }
+  }
+
+  /**
+   * Determine bus update status for student UI using Asia/Kolkata timezone
+   */
+  static getBusScheduleStatus(route: RouteData): {
+    isUpdatedToday: boolean;
+    departureTime: string;
+    publishedAt?: number;
+  } {
+    // 1. Check for published update in localStorage (from admin publish flow)
+    const published = this.getPublishedScheduleUpdate(route.busNumber, route.routeNumber, route.id);
+    if (published && published.status === 'published') {
+      const isToday = isTodayInKolkata(published.publishedAt);
+      return {
+        isUpdatedToday: isToday,
+        departureTime: published.departureTime || route.departureTime,
+        publishedAt: published.publishedAt
+      };
+    }
+
+    // 2. Check route-level lastPublishedAt timestamp
+    if (route.lastPublishedAt) {
+      const isToday = isTodayInKolkata(route.lastPublishedAt);
+      return {
+        isUpdatedToday: isToday,
+        departureTime: route.departureTime,
+        publishedAt: route.lastPublishedAt
+      };
+    }
+
+    // 3. Fallback: No update published today (truthful fallback, do not imply cancelled or delayed)
+    return {
+      isUpdatedToday: false,
+      departureTime: route.departureTime
+    };
   }
 }

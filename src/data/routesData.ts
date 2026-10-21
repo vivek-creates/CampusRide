@@ -89,7 +89,8 @@ export const INITIAL_ROUTES: RouteData[] = [
     boardingStatus: 'Boarding',
     isOperatingToday: true,
     busesScheduledCount: 2,
-    yesterdayBusNumber: '4050' // Changed bus today demonstration
+    yesterdayBusNumber: '4050', // Changed bus today demonstration
+    lastPublishedAt: Date.now() // Official schedule assignment updated and published today
   },
   {
     id: 'route-05',

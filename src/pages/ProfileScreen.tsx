@@ -4,8 +4,8 @@ import {
   User,
   Bell,
   Moon,
-  Globe,
   HelpCircle,
+  Bug,
   Info,
   LogOut,
   ChevronRight,
@@ -28,12 +28,19 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onLogout,
   onReplaySplash
 }) => {
-  const { theme, setTheme, language, setLanguage, preferences, updatePreferences, t } = useApp();
+  const { theme, setTheme, preferences, updatePreferences, t } = useApp();
   const [scoreData] = useState<StudentScoreData>(() => StorageService.getStudentScore());
   const [animatedPercent, setAnimatedPercent] = useState(0);
 
   // Active Modals
-  const [activeModal, setActiveModal] = useState<'notifications' | 'theme' | 'language' | 'help' | 'about' | null>(null);
+  const [activeModal, setActiveModal] = useState<'notifications' | 'theme' | 'help' | 'about' | 'report_bug' | null>(null);
+
+  // Report Bug Form State
+  const [bugCategory, setBugCategory] = useState<'ui' | 'search' | 'route' | 'other'>('ui');
+  const [bugTitle, setBugTitle] = useState('');
+  const [bugDescription, setBugDescription] = useState('');
+  const [bugError, setBugError] = useState<string | null>(null);
+  const [bugSubmitted, setBugSubmitted] = useState(false);
 
   // Animated percentage count-up
   useEffect(() => {
@@ -60,6 +67,29 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const ringRadius = 38;
   const circumference = 2 * Math.PI * ringRadius;
   const strokeDashoffset = circumference - (circumference * scoreData.accuracyRate) / 100;
+
+  const handleBugSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bugDescription.trim()) {
+      setBugError(t('bugDescriptionRequired'));
+      return;
+    }
+
+    setBugError(null);
+    StorageService.addFeedback({
+      category: 'problem',
+      title: bugTitle.trim() || `Bug: ${bugCategory.toUpperCase()}`,
+      description: `[Bug Report - ${bugCategory}] ${bugDescription.trim()}`
+    });
+
+    setBugSubmitted(true);
+    setTimeout(() => {
+      setBugSubmitted(false);
+      setBugTitle('');
+      setBugDescription('');
+      setActiveModal(null);
+    }, 2000);
+  };
 
   return (
     <div className="min-h-screen app-bg pb-28 px-4 pt-4 max-w-md mx-auto select-none overflow-x-hidden">
@@ -88,7 +118,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </span>
       </div>
 
-      {/* YOUR SCORE CARD */}
+      {/* =========================================================================
+          TEMPORARILY HIDDEN: YOUR SCORE CARD
+          (Preserved for easy restoration per requirements)
+      ========================================================================= */}
+      {/*
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -108,10 +142,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </span>
           </div>
 
-          {/* Circular Orange Progress Ring with Checkmark */}
           <div className="relative w-20 h-20 flex items-center justify-center">
             <svg className="w-full h-full transform -rotate-90">
-              {/* Background Track */}
               <circle
                 cx="40"
                 cy="40"
@@ -121,7 +153,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 strokeWidth="6"
                 fill="transparent"
               />
-              {/* Animated Orange Arc */}
               <motion.circle
                 cx="40"
                 cy="40"
@@ -137,17 +168,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               />
             </svg>
 
-            {/* Checkmark in center */}
             <div className="absolute inset-0 flex items-center justify-center text-[#FF9D2E]">
               <Check size={26} strokeWidth={3} />
             </div>
           </div>
         </div>
 
-        {/* Divider Line */}
         <div className="app-divider border-t my-3" />
 
-        {/* 3 Metrics: CORRECT, INCORRECT, RATING */}
         {scoreData.hasHistory ? (
           <div className="grid grid-cols-3 text-center py-1">
             <div>
@@ -187,6 +215,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           {t('scoreHelpText')}
         </p>
       </motion.div>
+      */}
 
       {/* SETTINGS MENU LIST */}
       <div className="space-y-2 mt-5">
@@ -234,28 +263,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <ChevronRight size={18} className="app-text-muted" />
         </button>
 
-        {/* Language */}
-        <button
-          type="button"
-          onClick={() => setActiveModal('language')}
-          className="w-full p-4 rounded-2xl app-card hover:border-[#FF6A00]/40 flex items-center justify-between transition-colors cursor-pointer text-left"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-9 h-9 rounded-xl app-tag text-[#FF9D2E] flex items-center justify-center">
-              <Globe size={18} />
-            </div>
-            <div>
-              <span className="text-sm font-semibold app-text-primary block">
-                {t('language')}
-              </span>
-              <span className="text-xs app-text-muted">
-                {language === 'en' ? 'English' : 'हिंदी (Hindi)'}
-              </span>
-            </div>
-          </div>
-          <ChevronRight size={18} className="app-text-muted" />
-        </button>
-
         {/* Help & Support */}
         <button
           type="button"
@@ -278,7 +285,33 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <ChevronRight size={18} className="app-text-muted" />
         </button>
 
-        {/* About CampusRide */}
+        {/* Report Bugs */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveModal('report_bug');
+            setBugError(null);
+            setBugSubmitted(false);
+          }}
+          className="w-full p-4 rounded-2xl app-card hover:border-[#FF6A00]/40 flex items-center justify-between transition-colors cursor-pointer text-left"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-xl app-tag text-[#FF9D2E] flex items-center justify-center">
+              <Bug size={18} />
+            </div>
+            <div>
+              <span className="text-sm font-semibold app-text-primary block">
+                {t('reportBugs')}
+              </span>
+              <span className="text-xs app-text-muted">
+                {t('reportBugsDesc')}
+              </span>
+            </div>
+          </div>
+          <ChevronRight size={18} className="app-text-muted" />
+        </button>
+
+        {/* About orBus */}
         <button
           type="button"
           onClick={() => setActiveModal('about')}
@@ -374,45 +407,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         )}
       </AnimatePresence>
 
-      {/* 2. Language Modal */}
-      <AnimatePresence>
-        {activeModal === 'language' && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
-            <div className="app-card rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-sm shadow-2xl">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold app-text-primary">{t('selectLanguage')}</h3>
-                <button onClick={() => setActiveModal(null)} className="app-text-muted hover:app-text-primary">
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="space-y-2.5">
-                {[
-                  { code: 'en' as const, label: 'English' },
-                  { code: 'hi' as const, label: 'हिंदी (Hindi)' }
-                ].map(l => (
-                  <button
-                    key={l.code}
-                    onClick={() => {
-                      setLanguage(l.code);
-                      setActiveModal(null);
-                    }}
-                    className={`w-full p-3.5 rounded-xl border flex items-center justify-between text-sm font-semibold transition-colors cursor-pointer ${
-                      language === l.code
-                        ? 'bg-[#FF6A00]/15 border-[#FF6A00] text-[#FF9D2E]'
-                        : 'app-input hover:border-[#FF6A00]/40'
-                    }`}
-                  >
-                    <span>{l.label}</span>
-                    {language === l.code && <Check size={18} className="text-[#FF790F]" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* 3. Notifications Modal */}
+      {/* 2. Notifications Modal */}
       <AnimatePresence>
         {activeModal === 'notifications' && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
@@ -460,7 +455,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         )}
       </AnimatePresence>
 
-      {/* 4. Help & Support */}
+      {/* 3. Help & Support */}
       <AnimatePresence>
         {activeModal === 'help' && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
@@ -489,7 +484,118 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         )}
       </AnimatePresence>
 
-      {/* 5. About CampusRide */}
+      {/* 4. Report Bugs Modal */}
+      <AnimatePresence>
+        {activeModal === 'report_bug' && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm select-none">
+            <div className="app-card rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#FF6A00]/15 text-[#FF790F] flex items-center justify-center">
+                    <Bug size={17} />
+                  </div>
+                  <h3 className="text-base font-bold app-text-primary">{t('reportBugTitle')}</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveModal(null);
+                    setBugError(null);
+                  }}
+                  className="app-text-muted hover:app-text-primary"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {bugSubmitted ? (
+                <div className="py-6 text-center space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-[#35D07F]/15 text-[#35D07F] flex items-center justify-center mx-auto">
+                    <Check size={24} />
+                  </div>
+                  <p className="text-xs font-semibold text-[#35D07F]">
+                    {t('bugSubmittedSuccess')}
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleBugSubmit} className="space-y-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold app-text-muted uppercase mb-1">
+                      {t('bugCategory')}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {[
+                        { id: 'ui', label: t('bugCategoryUI') },
+                        { id: 'search', label: t('bugCategorySearch') },
+                        { id: 'route', label: t('bugCategoryRoute') },
+                        { id: 'other', label: t('bugCategoryOther') }
+                      ].map(cat => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setBugCategory(cat.id as any)}
+                          className={`py-2 px-2.5 rounded-xl border text-[11px] font-medium transition-colors cursor-pointer text-left truncate ${
+                            bugCategory === cat.id
+                              ? 'bg-[#FF6A00]/20 border-[#FF6A00] text-[#FF9D2E]'
+                              : 'app-input hover:border-[#FF6A00]/40'
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold app-text-muted uppercase mb-1">
+                      {t('bugSubject')}
+                    </label>
+                    <input
+                      type="text"
+                      value={bugTitle}
+                      onChange={e => setBugTitle(e.target.value)}
+                      placeholder={t('bugSubjectPlaceholder')}
+                      className="w-full h-10 px-3 rounded-xl app-input text-xs placeholder:app-text-muted outline-none focus:border-[#FF6A00]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold app-text-muted uppercase mb-1">
+                      {t('bugDescription')} *
+                    </label>
+                    <textarea
+                      value={bugDescription}
+                      onChange={e => {
+                        setBugDescription(e.target.value);
+                        if (bugError) setBugError(null);
+                      }}
+                      placeholder={t('bugDescriptionPlaceholder')}
+                      rows={3}
+                      className={`w-full p-3 rounded-xl app-input text-xs placeholder:app-text-muted outline-none resize-none ${
+                        bugError ? 'border-[#FF4D4D]' : 'focus:border-[#FF6A00]'
+                      }`}
+                    />
+                    {bugError && (
+                      <p className="text-[11px] text-[#FF4D4D] mt-1 font-medium">
+                        {bugError}
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-xl bg-[#FF6A00] hover:bg-[#FF790F] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(255,106,0,0.3)]"
+                  >
+                    <span>{t('submitBugReport')}</span>
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 5. About orBus */}
       <AnimatePresence>
         {activeModal === 'about' && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">

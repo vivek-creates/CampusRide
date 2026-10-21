@@ -1,26 +1,23 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Bell,
-  ShieldCheck,
-  MessageSquare,
   Route,
-  ChevronRight,
-  X,
-  CheckCircle2,
+  MessageSquare,
   Bus,
-  Send
+  Send,
+  CheckCircle2,
+  X,
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 import { StorageService } from '../services/storageService';
 import { INITIAL_ROUTES } from '../data/routesData';
-import { RouteData, VerificationRecord, FeedbackRecord } from '../types';
-import { NotificationModal } from '../components/NotificationModal';
+import { RouteData, FeedbackRecord } from '../types';
 import { useApp } from '../context/AppContext';
 
 export const UpdatesScreen: React.FC = () => {
   const { t, formatStop } = useApp();
-  const [activeSection, setActiveSection] = useState<'routes' | 'activity' | 'feedback' | null>('routes');
-  const [verifications] = useState<VerificationRecord[]>(() => StorageService.getVerifications());
+  const [currentView, setCurrentView] = useState<'landing' | 'routes' | 'feedback'>('landing');
   const [feedbacks, setFeedbacks] = useState<FeedbackRecord[]>(() => StorageService.getFeedbacks());
 
   // Feedback form state
@@ -33,9 +30,6 @@ export const UpdatesScreen: React.FC = () => {
   // Route detail modal
   const [selectedRoute, setSelectedRoute] = useState<RouteData | null>(null);
   const [routeDirection, setRouteDirection] = useState<'to_college' | 'to_home'>('to_home');
-
-  // Notification modal
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const handleFeedbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,397 +51,330 @@ export const UpdatesScreen: React.FC = () => {
 
   const operatingRoutes = INITIAL_ROUTES.filter(r => r.isOperatingToday);
 
-  // Realistic Bhopal Oriental College route summary cards
-  const routeHighlights = [
-    { destination: 'Bairagarh / Lal Ghati (Route 01)', busCount: '2 buses', key: 'r1' },
-    { destination: 'Mandideep / 11 Mile (Route 13)', busCount: '4 buses', key: 'r13' },
-    { destination: 'Minal / Nizamuddin (Route 18)', busCount: '2 buses', key: 'r18' },
-    { destination: 'Ayodhya Nagar / Narela (Route 20)', busCount: '2 buses', key: 'r20' }
-  ];
-
   return (
     <div className="min-h-screen app-bg pb-28 px-4 pt-4 max-w-md mx-auto select-none overflow-x-hidden">
-      {/* HEADER */}
-      <header className="flex items-center justify-between py-3 mb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight app-text-primary">{t('updatesTitle')}</h1>
-          <p className="text-xs app-text-secondary mt-0.5">{t('updatesSubtitle')}</p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsNotificationOpen(true)}
-          className="w-10 h-10 rounded-xl app-card flex items-center justify-center hover:border-[#FF6A00] transition-colors cursor-pointer"
-          aria-label={t('notificationsTitle')}
+      {/* VIEW 1: Activity Landing Page (Two Cards) */}
+      {currentView === 'landing' && (
+        <motion.div
+          key="landing-view"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2 }}
         >
-          <Bell size={18} className="text-[#FF9D2E]" />
-        </button>
-      </header>
+          {/* Landing Header */}
+          <div className="py-3 mb-3">
+            <h1 className="text-xl font-bold app-text-primary tracking-tight">
+              {t('activityTitle')}
+            </h1>
+            <p className="text-xs app-text-secondary mt-0.5">
+              {t('activitySubtitle')}
+            </p>
+          </div>
 
-      {/* 3 PRIMARY FEATURE MODULE CARDS */}
-      <div className="space-y-3.5">
-        {/* CARD 1: Bus Verification Activity */}
-        <div
-          onClick={() => setActiveSection(activeSection === 'activity' ? null : 'activity')}
-          className={`app-card rounded-2xl p-4 transition-all cursor-pointer ${
-            activeSection === 'activity'
-              ? 'border-[#FF6A00] shadow-[0_0_20px_rgba(255,106,0,0.15)]'
-              : 'hover:border-[#FF6A00]/40'
-          }`}
+          {/* Two Primary Cards Stacked Vertically */}
+          <div className="space-y-4">
+            {/* Card 1: Today's Bus Routes */}
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setCurrentView('routes')}
+              className="app-card rounded-2xl p-5 shadow-lg border border-[#FF6A00]/25 hover:border-[#FF6A00] transition-all cursor-pointer group flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#FF6A00]/20 to-[#FF790F]/20 border border-[#FF9D2E]/30 text-[#FF9D2E] flex items-center justify-center shrink-0 group-hover:bg-[#FF6A00]/30 transition-colors">
+                  <Route size={24} className="text-[#FF790F]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold app-text-primary group-hover:text-[#FF9D2E] transition-colors">
+                    {t('todaysBusRoutes')}
+                  </h2>
+                  <p className="text-xs app-text-secondary mt-1 leading-snug">
+                    {t('exploreRoutesDesc')}
+                  </p>
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full app-tag flex items-center justify-center shrink-0 ml-2 group-hover:border-[#FF6A00]/50 transition-colors">
+                <ChevronRight size={18} className="app-text-muted group-hover:app-text-primary" />
+              </div>
+            </motion.div>
+
+            {/* Card 2: Transport Feedback & Requests */}
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setCurrentView('feedback')}
+              className="app-card rounded-2xl p-5 shadow-lg border border-[#FF6A00]/25 hover:border-[#FF6A00] transition-all cursor-pointer group flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#FF6A00]/20 to-[#FF790F]/20 border border-[#FF9D2E]/30 text-[#FF9D2E] flex items-center justify-center shrink-0 group-hover:bg-[#FF6A00]/30 transition-colors">
+                  <MessageSquare size={24} className="text-[#FF790F]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold app-text-primary group-hover:text-[#FF9D2E] transition-colors">
+                    {t('transportFeedback')}
+                  </h2>
+                  <p className="text-xs app-text-secondary mt-1 leading-snug">
+                    {t('feedbackCardDesc')}
+                  </p>
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full app-tag flex items-center justify-center shrink-0 ml-2 group-hover:border-[#FF6A00]/50 transition-colors">
+                <ChevronRight size={18} className="app-text-muted group-hover:app-text-primary" />
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* VIEW 2: Today's Bus Routes Detail View */}
+      {currentView === 'routes' && (
+        <motion.div
+          key="routes-view"
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -12 }}
+          transition={{ duration: 0.2 }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-[#FF6A00]/15 border border-[#FF9D2E]/20 text-[#FF9D2E] flex items-center justify-center shrink-0">
-                <ShieldCheck size={22} />
+          {/* Back Control and View Header */}
+          <div className="py-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setCurrentView('landing')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl app-tag text-xs font-semibold app-text-secondary hover:app-text-primary hover:border-[#FF6A00]/40 transition-colors cursor-pointer mb-3"
+            >
+              <ArrowLeft size={15} />
+              <span>{t('backToActivity')}</span>
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FF6A00]/15 border border-[#FF9D2E]/20 text-[#FF9D2E] flex items-center justify-center shrink-0">
+                <Route size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-bold app-text-primary">{t('busVerificationActivity')}</h3>
+                <h1 className="text-lg font-bold app-text-primary">{t('todaysBusRoutes')}</h1>
                 <p className="text-xs app-text-secondary mt-0.5 leading-snug">
-                  {t('busVerificationSubtitle')}
+                  {t('exploreRoutesDesc')}
                 </p>
               </div>
             </div>
-            <ChevronRight
-              size={18}
-              className={`app-text-muted transition-transform duration-200 shrink-0 ${
-                activeSection === 'activity' ? 'rotate-90 text-[#FF6A00]' : ''
-              }`}
-            />
           </div>
 
-          {/* Expanded Content: Verification Activity */}
-          <AnimatePresence>
-            {activeSection === 'activity' && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="mt-4 pt-4 app-divider border-t overflow-hidden"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[11px] font-bold app-text-muted uppercase tracking-wider">
-                    {t('recentVerifiedReports')}
-                  </span>
-                  <span className="text-xs text-[#35D07F] font-semibold">
-                    {t('localRecords', { count: verifications.length })}
-                  </span>
-                </div>
+          {/* Operating Bhopal Route List Directly (Highlights section removed) */}
+          <div className="app-card rounded-2xl p-4 shadow-lg border border-[#FF6A00]/25">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h2 className="text-xs font-bold app-text-muted uppercase tracking-wider">
+                {t('allOperatingRoutes', { count: operatingRoutes.length })}
+              </h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#35D07F]/15 text-[#35D07F]">
+                Active Today
+              </span>
+            </div>
 
-                <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                  {verifications.slice(0, 10).map((v) => (
-                    <div
-                      key={v.id}
-                      className="p-3 rounded-xl app-input flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
-                            v.userAnswer === 'YES'
-                              ? 'bg-[#35D07F]/15 text-[#35D07F] border border-[#35D07F]/30'
-                              : 'bg-[#FF4D4D]/15 text-[#FF4D4D] border border-[#FF4D4D]/30'
-                          }`}
-                        >
-                          {v.userAnswer}
-                        </div>
-                        <div>
-                          <span className="text-xs font-bold app-text-primary block">
-                            {v.busNumber} • {v.routeNumber}
-                          </span>
-                          <span className="text-[11px] app-text-secondary">
-                            {t('assigned')} {v.assignedStand}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] app-text-muted font-mono">
-                        {v.timeString}
+            <div className="space-y-2">
+              {operatingRoutes.map(route => (
+                <div
+                  key={route.id}
+                  onClick={() => setSelectedRoute(route)}
+                  className="p-3 rounded-xl app-input hover:border-[#FF6A00]/50 transition-colors flex items-center justify-between cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg app-tag group-hover:bg-[#FF6A00]/20 group-hover:text-[#FF790F] flex items-center justify-center transition-colors shrink-0">
+                      <Bus size={16} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold app-text-primary block group-hover:text-[#FF9D2E] transition-colors">
+                        {route.routeNumber} • {route.busNumber}
+                      </span>
+                      <span className="text-[11px] app-text-muted truncate max-w-[190px] block">
+                        {route.stops[0]} → {formatStop('COLLEGE')}
                       </span>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                  </div>
 
-        {/* CARD 2: Transport Feedback & Requests */}
-        <div
-          onClick={() => setActiveSection(activeSection === 'feedback' ? null : 'feedback')}
-          className={`app-card rounded-2xl p-4 transition-all cursor-pointer ${
-            activeSection === 'feedback'
-              ? 'border-[#FF6A00] shadow-[0_0_20px_rgba(255,106,0,0.15)]'
-              : 'hover:border-[#FF6A00]/40'
-          }`}
+                  <div className="text-right shrink-0">
+                    <span className="text-xs font-bold text-[#FF6A00] block">
+                      {route.assignedStand}
+                    </span>
+                    <span className="text-[10px] app-text-muted">
+                      {route.departureTime}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* VIEW 3: Transport Feedback & Requests Detail View */}
+      {currentView === 'feedback' && (
+        <motion.div
+          key="feedback-view"
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -12 }}
+          transition={{ duration: 0.2 }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-[#FF6A00]/15 border border-[#FF9D2E]/20 text-[#FF9D2E] flex items-center justify-center shrink-0">
-                <MessageSquare size={22} />
+          {/* Back Control and View Header */}
+          <div className="py-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setCurrentView('landing')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl app-tag text-xs font-semibold app-text-secondary hover:app-text-primary hover:border-[#FF6A00]/40 transition-colors cursor-pointer mb-3"
+            >
+              <ArrowLeft size={15} />
+              <span>{t('backToActivity')}</span>
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FF6A00]/15 border border-[#FF9D2E]/20 text-[#FF9D2E] flex items-center justify-center shrink-0">
+                <MessageSquare size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-bold app-text-primary">{t('transportFeedback')}</h3>
+                <h1 className="text-lg font-bold app-text-primary">{t('transportFeedback')}</h1>
                 <p className="text-xs app-text-secondary mt-0.5 leading-snug">
                   {t('transportFeedbackSubtitle')}
                 </p>
               </div>
             </div>
-            <ChevronRight
-              size={18}
-              className={`app-text-muted transition-transform duration-200 shrink-0 ${
-                activeSection === 'feedback' ? 'rotate-90 text-[#FF6A00]' : ''
-              }`}
-            />
           </div>
 
-          {/* Expanded Content: Feedback Form and Submissions */}
-          <AnimatePresence>
-            {activeSection === 'feedback' && (
+          {/* Feedback Form Card */}
+          <div className="app-card rounded-2xl p-5 shadow-lg border border-[#FF6A00]/25 mb-4">
+            {/* Submission Confirmation Alert */}
+            {feedbackSubmitted && (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                onClick={e => e.stopPropagation()}
-                className="mt-4 pt-4 app-divider border-t overflow-hidden"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3 rounded-xl bg-[#35D07F]/15 border border-[#35D07F]/40 text-[#35D07F] text-xs font-semibold flex items-center gap-2"
               >
-                {/* Submission Confirmation Alert */}
-                {feedbackSubmitted && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-4 p-3 rounded-xl bg-[#35D07F]/15 border border-[#35D07F]/40 text-[#35D07F] text-xs font-semibold flex items-center gap-2"
-                  >
-                    <CheckCircle2 size={16} />
-                    <span>{t('feedbackSubmittedMsg')}</span>
-                  </motion.div>
-                )}
-
-                <form onSubmit={handleFeedbackSubmit} className="space-y-3">
-                  {/* Category Selection */}
-                  <div>
-                    <label className="block text-[11px] font-bold app-text-muted uppercase mb-1.5">
-                      {t('requestCategory')}
-                    </label>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {[
-                        { id: 'problem', label: t('categoryProblem') },
-                        { id: 'bus_request', label: t('categoryBusRequest') },
-                        { id: 'allocation_issue', label: t('categoryAllocation') },
-                        { id: 'suggestion', label: t('categorySuggestion') }
-                      ].map(cat => (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => setFeedbackCategory(cat.id as any)}
-                          className={`py-2 px-2.5 rounded-xl border text-[11px] font-medium transition-colors cursor-pointer text-left truncate ${
-                            feedbackCategory === cat.id
-                              ? 'bg-[#FF6A00]/20 border-[#FF6A00] text-[#FF9D2E]'
-                              : 'app-input hover:border-[#FF6A00]/40'
-                          }`}
-                        >
-                          {cat.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Route selector */}
-                  <div>
-                    <label className="block text-[11px] font-bold app-text-muted uppercase mb-1">
-                      {t('relatedRoute')}
-                    </label>
-                    <select
-                      value={feedbackRoute}
-                      onChange={e => setFeedbackRoute(e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl app-input text-xs outline-none focus:border-[#FF6A00]"
-                    >
-                      {INITIAL_ROUTES.map(r => (
-                        <option key={r.id} value={r.routeNumber} className="app-card">
-                          {r.routeNumber} ({r.busNumber}) - {r.stops[0]} → {formatStop('COLLEGE')}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Title */}
-                  <div>
-                    <label className="block text-[11px] font-bold app-text-muted uppercase mb-1">
-                      {t('formSubject')}
-                    </label>
-                    <input
-                      type="text"
-                      value={feedbackTitle}
-                      onChange={e => setFeedbackTitle(e.target.value)}
-                      placeholder={t('formSubjectPlaceholder')}
-                      required
-                      className="w-full h-10 px-3 rounded-xl app-input text-xs placeholder:app-text-muted outline-none focus:border-[#FF6A00]"
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <label className="block text-[11px] font-bold app-text-muted uppercase mb-1">
-                      {t('formDetails')}
-                    </label>
-                    <textarea
-                      value={feedbackDesc}
-                      onChange={e => setFeedbackDesc(e.target.value)}
-                      placeholder={t('formDetailsPlaceholder')}
-                      rows={3}
-                      required
-                      className="w-full p-3 rounded-xl app-input text-xs placeholder:app-text-muted outline-none focus:border-[#FF6A00] resize-none"
-                    />
-                  </div>
-
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 rounded-xl bg-[#FF6A00] hover:bg-[#FF790F] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(255,106,0,0.3)]"
-                  >
-                    <Send size={14} />
-                    <span>{t('submitFeedbackBtn')}</span>
-                  </button>
-                </form>
-
-                {/* Previously Submitted Submissions */}
-                <div className="mt-5 pt-4 app-divider border-t">
-                  <h4 className="text-xs font-bold app-text-muted uppercase tracking-wider mb-2.5">
-                    {t('yourSubmissions')}
-                  </h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    {feedbacks.map(fb => (
-                      <div
-                        key={fb.id}
-                        className="p-3 rounded-xl app-input"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-bold app-text-primary">{fb.title}</span>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              fb.status === 'Resolved'
-                                ? 'bg-[#35D07F]/15 text-[#35D07F] border border-[#35D07F]/30'
-                                : 'bg-[#FFB020]/15 text-[#FFB020] border border-[#FFB020]/30'
-                            }`}
-                          >
-                            {fb.status === 'Resolved' ? t('statusResolved') : t('statusUnderReview')}
-                          </span>
-                        </div>
-                        <p className="text-[11px] app-text-secondary leading-relaxed">
-                          {fb.description}
-                        </p>
-                        {fb.routeNumber && (
-                          <span className="inline-block mt-1.5 text-[10px] font-mono text-[#FF790F]">
-                            {fb.routeNumber}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <CheckCircle2 size={16} />
+                <span>{t('feedbackSubmittedMsg')}</span>
               </motion.div>
             )}
-          </AnimatePresence>
-        </div>
 
-        {/* CARD 3: Today's Bus Routes */}
-        <div
-          className="app-card border border-[#FF6A00] rounded-2xl p-4 shadow-[0_0_20px_rgba(255,106,0,0.12)]"
-        >
-          <div
-            onClick={() => setActiveSection(activeSection === 'routes' ? null : 'routes')}
-            className="flex items-center justify-between cursor-pointer"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-[#FF6A00]/15 border border-[#FF9D2E]/20 text-[#FF9D2E] flex items-center justify-center shrink-0">
-                <Route size={22} />
-              </div>
+            <form onSubmit={handleFeedbackSubmit} className="space-y-3">
+              {/* Category Selection */}
               <div>
-                <h3 className="text-sm font-bold app-text-primary">{t('todaysBusRoutes')}</h3>
-                <p className="text-xs app-text-secondary mt-0.5 leading-snug">
-                  {t('todaysRoutesSubtitle')}
-                </p>
+                <label className="block text-[11px] font-bold app-text-muted uppercase mb-1.5">
+                  {t('requestCategory')}
+                </label>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {[
+                    { id: 'problem', label: t('categoryProblem') },
+                    { id: 'bus_request', label: t('categoryBusRequest') },
+                    { id: 'allocation_issue', label: t('categoryAllocation') },
+                    { id: 'suggestion', label: t('categorySuggestion') }
+                  ].map(cat => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setFeedbackCategory(cat.id as any)}
+                      className={`py-2 px-2.5 rounded-xl border text-[11px] font-medium transition-colors cursor-pointer text-left truncate ${
+                        feedbackCategory === cat.id
+                          ? 'bg-[#FF6A00]/20 border-[#FF6A00] text-[#FF9D2E]'
+                          : 'app-input hover:border-[#FF6A00]/40'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <ChevronRight
-              size={18}
-              className={`text-[#FF6A00] transition-transform duration-200 shrink-0 ${
-                activeSection === 'routes' ? 'rotate-90' : ''
-              }`}
-            />
+
+              {/* Route selector */}
+              <div>
+                <label className="block text-[11px] font-bold app-text-muted uppercase mb-1">
+                  {t('relatedRoute')}
+                </label>
+                <select
+                  value={feedbackRoute}
+                  onChange={e => setFeedbackRoute(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl app-input text-xs outline-none focus:border-[#FF6A00]"
+                >
+                  {INITIAL_ROUTES.map(r => (
+                    <option key={r.id} value={r.routeNumber} className="app-card">
+                      {r.routeNumber} ({r.busNumber}) - {r.stops[0]} → {formatStop('COLLEGE')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="block text-[11px] font-bold app-text-muted uppercase mb-1">
+                  {t('formSubject')}
+                </label>
+                <input
+                  type="text"
+                  value={feedbackTitle}
+                  onChange={e => setFeedbackTitle(e.target.value)}
+                  placeholder={t('formSubjectPlaceholder')}
+                  required
+                  className="w-full h-10 px-3 rounded-xl app-input text-xs placeholder:app-text-muted outline-none focus:border-[#FF6A00]"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-[11px] font-bold app-text-muted uppercase mb-1">
+                  {t('formDetails')}
+                </label>
+                <textarea
+                  value={feedbackDesc}
+                  onChange={e => setFeedbackDesc(e.target.value)}
+                  placeholder={t('formDetailsPlaceholder')}
+                  rows={3}
+                  required
+                  className="w-full p-3 rounded-xl app-input text-xs placeholder:app-text-muted outline-none focus:border-[#FF6A00] resize-none"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="w-full py-2.5 rounded-xl bg-[#FF6A00] hover:bg-[#FF790F] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(255,106,0,0.3)]"
+              >
+                <Send size={14} />
+                <span>{t('submitFeedbackBtn')}</span>
+              </button>
+            </form>
           </div>
 
-          {/* Today's Operating Routes Summary */}
-          <AnimatePresence>
-            {activeSection === 'routes' && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="mt-4 pt-3 app-divider border-t overflow-hidden"
-              >
-                <div className="mb-3">
-                  <span className="text-xs font-semibold text-[#FF9D2E] block">
-                    {t('routeSummaryTitle')}
-                  </span>
-                </div>
-
-                {/* Oriental College Bhopal Route Summaries */}
-                <div className="space-y-3 mb-4">
-                  {routeHighlights.map(item => (
-                    <div key={item.key} className="flex items-center justify-between py-1">
-                      <div>
-                        <h4 className="text-sm font-bold app-text-primary">{item.destination}</h4>
-                        <span className="text-xs app-text-muted">{t('scheduledBuses')}</span>
-                      </div>
-                      <span className="text-base font-bold text-[#FF6A00]">{item.busCount}</span>
-                    </div>
-                  ))}
-
-                  <p className="text-[11px] app-text-muted italic">{t('illustrativeNote')}</p>
-                </div>
-
-                {/* Complete List of Today's Operating College Routes */}
-                <div className="app-divider border-t pt-3">
-                  <h4 className="text-xs font-bold app-text-muted uppercase tracking-wider mb-2.5">
-                    {t('allOperatingRoutes', { count: operatingRoutes.length })}
-                  </h4>
-
-                  <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                    {operatingRoutes.map(route => (
-                      <div
-                        key={route.id}
-                        onClick={() => setSelectedRoute(route)}
-                        className="p-3 rounded-xl app-input hover:border-[#FF6A00]/50 transition-colors flex items-center justify-between cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg app-tag group-hover:bg-[#FF6A00]/20 group-hover:text-[#FF790F] flex items-center justify-center transition-colors">
-                            <Bus size={16} />
-                          </div>
-                          <div>
-                            <span className="text-xs font-bold app-text-primary block group-hover:text-[#FF9D2E] transition-colors">
-                              {route.routeNumber} • {route.busNumber}
-                            </span>
-                            <span className="text-[11px] app-text-muted truncate max-w-[190px] block">
-                              {route.stops[0]} → {formatStop('COLLEGE')}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-xs font-bold text-[#FF6A00] block">
-                            {route.assignedStand}
-                          </span>
-                          <span className="text-[10px] app-text-muted">
-                            {route.departureTime}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+          {/* Previously Submitted Submissions */}
+          <div className="app-card rounded-2xl p-5 shadow-lg border border-[#FF6A00]/25">
+            <h2 className="text-xs font-bold app-text-muted uppercase tracking-wider mb-2.5">
+              {t('yourSubmissions')}
+            </h2>
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {feedbacks.map(fb => (
+                <div
+                  key={fb.id}
+                  className="p-3 rounded-xl app-input"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold app-text-primary">{fb.title}</span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        fb.status === 'Resolved'
+                          ? 'bg-[#35D07F]/15 text-[#35D07F] border border-[#35D07F]/30'
+                          : 'bg-[#FFB020]/15 text-[#FFB020] border border-[#FFB020]/30'
+                      }`}
+                    >
+                      {fb.status === 'Resolved' ? t('statusResolved') : t('statusUnderReview')}
+                    </span>
                   </div>
+                  <p className="text-[11px] app-text-secondary leading-relaxed">
+                    {fb.description}
+                  </p>
+                  {fb.routeNumber && (
+                    <span className="inline-block mt-1.5 text-[10px] font-mono text-[#FF790F]">
+                      {fb.routeNumber}
+                    </span>
+                  )}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* ROUTE SCHEDULE DETAILS MODAL */}
       <AnimatePresence>
@@ -593,12 +520,6 @@ export const UpdatesScreen: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
-
-      {/* NOTIFICATION MODAL */}
-      <NotificationModal
-        isOpen={isNotificationOpen}
-        onClose={() => setIsNotificationOpen(false)}
-      />
     </div>
   );
 };

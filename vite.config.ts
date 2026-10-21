@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'CampusRide',
-        short_name: 'CampusRide',
+        name: 'orBus',
+        short_name: 'orBus',
         description: 'College bus departure and route assistance system',
         theme_color: '#080808',
         background_color: '#080808',
